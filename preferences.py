@@ -55,26 +55,33 @@ class SWD_OT_check_ffmpeg(bpy.types.Operator):
         # check path command
         import  shutil
         self.sys_path_ok = shutil.which('ffmpeg')
+        # print(shutil.which('ffmpeg'))
         
         # check windows exe
         self.local_ffmpeg = False
         self.is_window_os = sys.platform.startswith('win')
+        self.is_osx_os = sys.platform.startswith('darwin')
+        # print(sys.platform)
         if self.is_window_os:
             ffbin = Path(__file__).parent / 'ffmpeg.exe'
             self.local_ffmpeg = ffbin.exists()
+        if self.is_osx_os:
+            ffbin = Path(__file__).parent / 'ffmpeg'
+            self.local_ffmpeg = ffbin.exists()
+        print("ffbin path %s " % ffbin)
 
         return context.window_manager.invoke_props_dialog(self, width=400)
     
     def draw(self, context):
         layout = self.layout
-
+        # print(sys.platform)
         if self.local_ffmpeg:
-            layout.label(text='ffmpeg.exe found in addon folder (this binary will be used)', icon='CHECKMARK')
+            layout.label(text='ffmpeg found in addon folder (this binary will be used)', icon='CHECKMARK')
         
         if self.sys_path_ok:
             layout.label(text='ffmpeg is in system PATH', icon='CHECKMARK')
         else:
-            layout.label(text='ffmeg is not in system PATH', icon='X') # CANCEL
+            layout.label(text='ffmpeg is not in system PATH', icon='X') # CANCEL
 
     def execute(self, context):
         return {'FINISHED'}
@@ -214,6 +221,15 @@ class SWD_OT_download_ffmpeg(bpy.types.Operator):
         self.report({'INFO'}, f'Installed: {self.ffbin.resolve()}')
         return {'FINISHED'}
 
+def update_wave(self, context):
+    print("## UPDATE WAVE")
+    get_addon_prefs().refresh_draw = True if (get_addon_prefs().refresh_draw == False) else True
+    # Slow
+    # global was_done
+    # was_done = False
+    # if not was_done:
+    #     bpy.ops.anim.enable_draw()
+    #     was_done = True
 
 class SWD_sound_waveform_display_addonpref(bpy.types.AddonPreferences):
     bl_idname = __name__.split('.')[0]
@@ -229,31 +245,28 @@ class SWD_sound_waveform_display_addonpref(bpy.types.AddonPreferences):
         size=3,
         default=(0.2392, 0.5098, 0.6941),
         min=0.0, max=1.0,
-        description="Color of the waveform")
+        description="Color of the waveform",
+        update=update_wave)
 
     wave_detail : EnumProperty(
-        name="Waveform Details", description="Precision (by increasing resolution) of the sound waveform", 
+        name="Waveform details", description="Precision (by increasing resolution) of the sound waveform", 
         default='4000x1000', options={'HIDDEN', 'SKIP_SAVE'},
         items=(
-            # ('2000x500', 'Low', 'Resolution of the generated wave image', 0),
-            ('4000x1000', 'Medium', 'Resolution of the generated wave image', 0),
-            ('8000x2000', 'High', 'Resolution of the generated wave image', 1),
-            ('12000x3000', 'Very High', 'Resolution of the generated wave image', 2), # too high
-            ))
-
-    height_mode : EnumProperty(
-        name="Waveform Height", description="How waveform size adapt to editor height", 
-        default='RELATIVE', options={'HIDDEN', 'SKIP_SAVE'},
-        items=(
-            ('RELATIVE', 'Relative', 'Waveform size is relative and adapt to editor hieght', 0),
-            ('ABSOLUTE', 'Absolute', 'Waveform size is absolute and do not change according to editor size', 1),
-            ))
+            ('2000x500', 'Low', 'Resolution of the generated wave image', 0),
+            ('4000x1000', 'Medium', 'Resolution of the generated wave image', 1),
+            ('8000x2000', 'High', 'Resolution of the generated wave image', 2),
+            ('12000x3000', 'Very High', 'Resolution of the generated wave image', 3), # too high
+            ),
+        update=update_wave)
 
     debug : BoolProperty(
         name="Verbose Mode",
         description="Verbose/Debug mode. Enable prints in console to follow script behavior",
         default=False, options={'HIDDEN'})
-
+    
+    refresh_draw : BoolProperty(
+        name="Draw Enabled",
+        default=False, options={'HIDDEN'})
 
     def draw(self, context):
         layout = self.layout
@@ -264,9 +277,9 @@ class SWD_sound_waveform_display_addonpref(bpy.types.AddonPreferences):
         box.label(text='Waveform Options:')
         box.prop(self, "wave_color")
         box.prop(self, "wave_detail")
-        box.prop(self, "height_mode")
         box.prop(self, "debug")
-
+        # box.prop(self, "refresh_draw")
+        
         box = layout.box()
         box.label(text='FFmpeg check and installation:')
         col = box.column()
@@ -288,6 +301,7 @@ class SWD_sound_waveform_display_addonpref(bpy.types.AddonPreferences):
         col.label(text="Alternatively, you can point to ffmpeg executable:")
         col.label(text="(Leave field empty if ffmpeg is in system PATH)")
         col.prop(self, "path_to_ffmpeg")
+        
 
 
 ### --- REGISTER ---

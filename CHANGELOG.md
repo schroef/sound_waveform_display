@@ -5,22 +5,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ## [Unreleased] -->
 
-## [0.9.0] - 2022-11-05
-
-### Added
-
-- _Relative height_ mode to adapt wave height when windows are resized
-- Choose height adapt mode in preference between absolute or relative (new default)
-
-### Changed
-
-- Absolute height offset value use now a multiplicator _x10_ (tweak value where always high)
-
-## [0.8.5] - 2022-09-13
+## [0.8.5] - 2022-09-08
 
 ### Fixed
+- Addon works on OSX now as well
 
-- when binary exists in folder, make the check platform dependant (linux took `ffmpeg.exe`)
+### Changed
+- On button shows refresh after pref setting has been changed
 
 ## [0.8.4] - 2022-08-28
 

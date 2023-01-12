@@ -7,7 +7,8 @@ class SWD_PT_quick_pref_ui(Panel):
     bl_space_type = 'GRAPH_EDITOR'
     bl_region_type = 'UI'
     bl_category = "Display"
-    bl_options = {'INSTANCED'}
+    bl_options = {'DEFAULT_CLOSED'}
+    # bl_options = {'INSTANCED'}
     # bl_context = "Display"
 
     def draw(self, context):
@@ -21,42 +22,48 @@ class SWD_PT_quick_pref_ui(Panel):
 
 
 def side_menu(self, context):
-        layout = self.layout
-        scn = context.scene
-        row = layout.row()
-        # row.operator('anim.timeline_draw_test', icon = 'NORMALIZE_FCURVES')
-        row.operator('anim.enable_draw', text='On', icon = 'NORMALIZE_FCURVES')
-        row.operator('anim.disable_draw', text='Off')
+    layout = self.layout
+    scn = context.scene
+    row = layout.row()
+    # row.operator('anim.timeline_draw_test', icon = 'NORMALIZE_FCURVES')
+    if get_addon_prefs().refresh_draw:
+        draw_text = "Reresh"
+        draw_icon = 'FILE_REFRESH'
+    if not get_addon_prefs().refresh_draw:
+        draw_text = "ON"
+        draw_icon = 'NORMALIZE_FCURVES'
+    row.operator('anim.enable_draw', text=draw_text, icon = draw_icon)
+    row.operator('anim.disable_draw', text='Off')
 
-        row = layout.row()
-        row.prop(scn.swd_settings, 'height_offset')
+    row = layout.row()
+    row.prop(scn.swd_settings, 'height_offset')
 
-        row = layout.row()
-        row.prop(scn.swd_settings, 'use_dope')
-        row.prop(scn.swd_settings, 'use_graph')
-        row = layout.row()
-        row.prop(scn.swd_settings, 'use_time')
-        ## Direct prefs
-        # row.operator("swd.open_addon_prefs", text='Prefs', icon='PREFERENCES')
-        ## quick prefs
-        row.popover('SWD_PT_quick_pref_ui', text='Prefs', icon='PREFERENCES')
+    row = layout.row()
+    row.prop(scn.swd_settings, 'use_dope')
+    row.prop(scn.swd_settings, 'use_graph')
+    row = layout.row()
+    row.prop(scn.swd_settings, 'use_time')
+    ## Direct prefs
+    # row.operator("swd.open_addon_prefs", text='Prefs', icon='PREFERENCES')
+    ## quick prefs
+    row.popover('SWD_PT_quick_pref_ui', text='Prefs', icon='PREFERENCES')
 
-        layout.prop(scn.swd_settings, 'source')
-        if scn.swd_settings.source == 'SEQUENCER':
-            vse = scn.sequence_editor
-            if not vse:
-                layout.label(text='No sequencer active in scene')
-                return
-            layout.prop(scn.swd_settings, 'vse_target')
-            if scn.swd_settings.vse_target == 'LIST':
-                layout.template_list("SWD_UL_sound_list", "", vse, "sequences", \
-                    scn.swd_settings, "seq_idx", rows=3)
+    layout.prop(scn.swd_settings, 'source')
+    if scn.swd_settings.source == 'SEQUENCER':
+        vse = scn.sequence_editor
+        if not vse:
+            layout.label(text='No sequencer active in scene')
+            return
+        layout.prop(scn.swd_settings, 'vse_target')
+        if scn.swd_settings.vse_target == 'LIST':
+            layout.template_list("SWD_UL_sound_list", "", vse, "sequences", \
+                scn.swd_settings, "seq_idx", rows=3)
 
-        # elif scn.swd_settings.source == 'SPEAKERS':
-        #     layout.prop(scn.swd_settings, 'spk_target')
-        
-        # row = layout.row()
-        # row.prop(scn.swd_settings, 'color')
+    # elif scn.swd_settings.source == 'SPEAKERS':
+    #     layout.prop(scn.swd_settings, 'spk_target')
+    
+    # row = layout.row()
+    # row.prop(scn.swd_settings, 'color')
 
 def header_layout(self, context):
     layout = self.layout

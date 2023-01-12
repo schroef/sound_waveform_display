@@ -15,7 +15,6 @@ sw_coordlist = []
 handle_dope = None
 handle_graph = None
 image = None
-height_mode = 'RELATIVE'
 
 def show_message_box(_message = "", _title = "Message Box", _icon = 'INFO'):
     '''Show message box with element passed as string or list
@@ -73,18 +72,9 @@ def draw_callback_px(self, context):
         [context.region.view2d.view_to_region(co[0], 0, clip=False)[0], (co[1])+margin]\
         for co in sw_coordlist]
 
-
     ## Absolute offset
-    if height_mode == 'RELATIVE':
-        ## relative height offset
-        height = sw_coordlist[3][1]
-        ratio = (context.region.height * height) / 1000
-        final_height = (coords[2][1] + context.scene.swd_settings.height_offset) * ratio
-        coords[3][1] = coords[2][1] = final_height
-    else:
-        coords[2][1] += context.scene.swd_settings.height_offset * 10
-        coords[3][1] += context.scene.swd_settings.height_offset * 10
-
+    coords[2][1] += context.scene.swd_settings.height_offset
+    coords[3][1] += context.scene.swd_settings.height_offset
 
     shader = gpu.shader.from_builtin('2D_IMAGE')
     batch = batch_for_shader(
@@ -132,20 +122,21 @@ class SWD_OT_enable_draw(Operator):
         global sw_coordlist
         global handle_dope
         global handle_graph
-        global height_mode
         global image
 
+        self.is_window_os = sys.platform.startswith('win')
+        self.is_osx_os = sys.platform.startswith('darwin')
+        
         prefs = get_addon_prefs()
-        height_mode = prefs.height_mode
         dbg = prefs.debug
-
-        if sys.platform.lower().startswith('win'):
+        # print("ffbin path %s" % (Path(__file__)))
+        # print("ffbin %s" % ((Path(__file__) / 'ffmpeg')))
+        if self.is_window_os:
             ffbin = Path(__file__).parent / 'ffmpeg.exe'
-        else:
+        if self.is_osx_os:
             ffbin = Path(__file__).parent / 'ffmpeg'
 
         cmd = ['ffmpeg',]
-
         if prefs.path_to_ffmpeg:
             ffpath = Path(prefs.path_to_ffmpeg)
             if ffpath.exists() and ffpath.is_file():
@@ -158,7 +149,18 @@ class SWD_OT_enable_draw(Operator):
             cmd = [str(ffbin)]
 
         else:
-            if not shutil.which('ffmpeg'):
+            # check windows exe
+            self.local_ffmpeg = False
+            
+            # print(sys.platform)
+            if self.is_window_os:
+                ffbin = Path(__file__).parent / 'ffmpeg.exe'
+                self.local_ffmpeg = ffbin.exists()
+            if self.is_osx_os:
+                ffbin = Path(__file__).parent / 'ffmpeg'
+                self.local_ffmpeg = ffbin.exists()
+            # print("local_ffmpeg %s" % self.local_ffmpeg)
+            if not shutil.which('ffmpeg') or not self.local_ffmpeg:
                 show_message_box(_title = "No ffmpeg found", _icon = 'INFO',
                     _message =[
                             "ffmpeg is needed to display wave, see addon prefs",
@@ -183,6 +185,7 @@ class SWD_OT_enable_draw(Operator):
 
 
         temp_dir = Path(tempfile.gettempdir())
+        print("temp_dir %s" % temp_dir)
         sname = '.tmp_scene_waveform.png'
         tmp_sound_name = 'tmp_scene_mixdown.wav'
         ifp = temp_dir / sname # temp files
@@ -283,7 +286,8 @@ class SWD_OT_enable_draw(Operator):
         '-hide_banner', 
         '-loglevel', 'error',
         '-filter_complex', 
-        f"[0:a]aformat=channel_layouts=mono,showwavespic=s={img_res}:colors={hex_colo}:draw=full,crop=iw:ih/2:0:0",
+        # f"[0:a]aformat=channel_layouts=mono,showwavespic=s={img_res}:colors={hex_colo}:draw=full,crop=iw:ih/2:0:0",
+        f"[0:a]showwavespic=s={img_res}:colors={hex_colo}:draw=full,crop=iw:ih/2:0:0",
         '-frames:v', '1', 
         '-y', str(ifp)]
         # "[0:a]aformat=channel_layouts=mono,showwavespic=s=4000x1000:colors=3D82B1", # Static filter line
@@ -335,7 +339,8 @@ class SWD_OT_enable_draw(Operator):
                 draw_callback_px, args, spacetype, 'POST_PIXEL')
 
         refresh()
-
+        was_done = True
+        get_addon_prefs().refresh_draw = False
         ## Ensure to delete mixdown sound after generating waveform
         if sfp.exists() and sfp.name == tmp_sound_name:
             try:
@@ -372,7 +377,7 @@ class SWD_OT_disable_draw(Operator):
         stopped = disable_waveform_draw_handler()
         if not stopped:
             self.report({'WARNING'}, 'Already disabled')
-
+        get_addon_prefs().refresh_draw = False
         return {'FINISHED'}
 
 classes=(

@@ -1,9 +1,9 @@
 bl_info = {
     "name": "Sound Waveform Display",
     "description": "Display selected sound waveform in timeline/dopesheet/graph",
-    "author": "Samuel Bernou",
-    "version": (0, 9, 0),
-    "blender": (3, 2, 0),
+    "author": "Samuel Bernou, Rombout Versluijs (OSX)",
+    "version": (0, 8, 5),
+    "blender": (2, 80, 0),
     "location": "View3D",
     "warning": "",
     "doc_url": "https://github.com/Pullusb/sound_waveform_display",
